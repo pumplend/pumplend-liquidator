@@ -14,7 +14,7 @@ const nacl = require('tweetnacl');
 const idl = require("../idl/pumplend.json")
 require('dotenv').config()
 const connection = new Connection(process.env.SOLANA_RPC, 'confirmed'); 
-const programId = new PublicKey('6m6ixFjRGq7HYAPsu8YtyEauJm8EE8pzA3mqESt5cGYf'); 
+const programId = new PublicKey(process.env.SOLANA_LISTEN_ADDRESS); 
 async function loadProgram() {
   return new Program(idl, programId, connection);
 }
@@ -36,45 +36,31 @@ async function processInstruction(program, ix ,adds) {
         inputData : decodedIx.data,
         address:adds
     }
-  switch (decodedIx.name) {
-    case "borrow":
-      console.log("Processing 'borrow' instruction...");
-   
-      break;
-    case "borrowLoopPump":
-      console.log("Processing 'borrowLoopPump' instruction...");
-    
-      break;
-    case "borrowLoopRaydium":
-      console.log("Processing 'borrowLoopRaydium' instruction...");
-     
-      break;
-    case "repay":
-      console.log("Processing 'repay' instruction...");
-   
-      break;
-    case "increaseCollateral":
-      console.log("Processing 'increaseCollateral' instruction...");
-
-      break;
-    case "liquidatePump":
-      console.log("Processing 'liquidatePump' instruction...");
-   
-      break;
-    case "liquidateRaydium":
-      console.log("Processing 'liquidateRaydium' instruction...");
-   
-      break;     
-    default:
-      console.log(`Unhandled instruction: ${decodedIx.name}`);
-  }
 }
-async function parseTransaction(txHash, program) {
-  const transaction = await connection.getTransaction(txHash, { commitment: "confirmed" });
-  if (!transaction) {
-    console.error("Transaction not found.");
-    return;
+
+async function parseTransactionByHash(txHash, program) {
+    const transaction = await connection.getTransaction(txHash, { commitment: "confirmed" });
+    if (!transaction) {
+      console.error("Transaction not found.");
+      return;
+    }
+    const instructions = transaction.transaction.message.instructions;
+    let ret = [];
+    for (const ix of instructions) {
+      const tmp = await processInstruction(program, ix,transaction.transaction.message.accountKeys);
+      if(tmp)
+      {
+          ret.push(
+              tmp
+          )
+      }
+  
+    }
+    return ret;
   }
+  
+async function parseTransaction(tx, program) {
+  const transaction = tx;
   const instructions = transaction.transaction.message.instructions;
   let ret = [];
   for (const ix of instructions) {
@@ -103,17 +89,41 @@ function verifySolanaSignature(message, signature, publicKey) {
 }
 
 
-async function getTransactionDetails(txHash) {  
+async function getTransactionDetailsByHash(txHash) {  
     try {
         const program = await loadProgram();
-        return await parseTransaction(txHash, program);
+        return await parseTransactionByHash(txHash, program);
     } catch (error) {
       console.error('Error getting transaction:', error);
       return false;
     }
   }
 
+async function getTransactionDetails(txn) {  
+    try {
+        const program = await loadProgram();
+        return await parseTransaction(txn, program);
+    } catch (error) {
+      console.error('Error getting transaction:', error);
+      return false;
+    }
+  }
+async function getTransactionHistory(address,pageSize) {
+  try {
+    const signatures = await connection.getSignaturesForAddress(address, {
+      limit: pageSize,
+    });
+
+    return signatures;
+  } catch (error) {
+    console.error('Error fetching transaction history:', error);
+    return false;
+  }
+}
+
 module.exports= {
     verifySolanaSignature,
-    getTransactionDetails
+    getTransactionDetailsByHash,
+    getTransactionDetails,
+    getTransactionHistory
 }
