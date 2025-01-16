@@ -80,6 +80,14 @@ async function getOrderByHash(hash) {
     await db.close();
     return ret;
 }
+async function getOrderByDeadline(deadline) {
+    const db = await connect()
+    var ret = await db.collection(sOrder).find({
+        liquidtionTime: { $lt: deadline }
+    }).project({}).toArray();
+    await db.close();
+    return ret;
+}
 
 async function newHistory(data) {
     const db = await connect()
@@ -122,5 +130,6 @@ module.exports = {
     updateIndexer,
     getIndexer,
     newActionHistory,
-    getActionHistory
+    getActionHistory,
+    getOrderByDeadline
 }
