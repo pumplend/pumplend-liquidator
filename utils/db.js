@@ -14,7 +14,7 @@ const mainDB = process.env.DB_NAME
 const sIndex = "indexer";
 const sOrder = "orders";
 const sOrderHistory = "order_history";
-
+const sActionHistory = "actions_history";
 const sMission = "missions"
 
 /**
@@ -96,6 +96,23 @@ async function getOrderHistoryById(id) {
     await db.close();
     return ret;
 }
+
+async function newActionHistory(data) {
+    const db = await connect()
+    var ret = await db.db.collection(sActionHistory).insertOne(data);
+    await db.close();
+    return ret;
+}
+
+async function getActionHistory(id) {
+    const db = await connect()
+    var ret = await db.collection(sActionHistory).find({
+        id: id
+    }).project({}).toArray();
+    await db.close();
+    return ret;
+}
+
 module.exports = {
     newOrder,
     getOrderById,
@@ -103,5 +120,7 @@ module.exports = {
     newHistory,
     getOrderHistoryById,
     updateIndexer,
-    getIndexer
+    getIndexer,
+    newActionHistory,
+    getActionHistory
 }

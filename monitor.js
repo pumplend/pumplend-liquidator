@@ -20,7 +20,9 @@ async function loop ()
             try{
               let tx = finalArr[i]
               await handleNewTx(tx)
+
               //Update indexer
+
               // await db.updateIndexer(
               //   {
               //     id:0,
@@ -39,7 +41,7 @@ async function loop ()
 
 async function handleNewTx(tx) {
   const decode = await web3.getTransactionDetailsByHash(tx.signature);
-  return actions(decode.name)
+  return await actions(decode)
 }
 
 async function hashCheck(rawData) {
@@ -57,36 +59,25 @@ async function hashCheck(rawData) {
     return rawData;
 }
 
-function actions(data) {
+async function actions(data) {
+
+  
+  
+
+  //Handle transactions by actions types 
     switch (data.name) {
-        case "borrow":
-          console.log("Processing 'borrow' instruction...");
-       
+        case "borrow": case "borrowLoopPump": case "borrowLoopRaydium":case "increaseCollateral":
+          //Storage the action history into DB
+          await db.newActionHistory(data)
+          //Culcuate Liquidtion time using SDK
+          console.log("Processing borrow like actions . overwrite the order");
           break;
-        case "borrowLoopPump":
-          console.log("Processing 'borrowLoopPump' instruction...");
-        
-          break;
-        case "borrowLoopRaydium":
-          console.log("Processing 'borrowLoopRaydium' instruction...");
-         
-          break;
-        case "repay":
-          console.log("Processing 'repay' instruction...");
-       
-          break;
-        case "increaseCollateral":
-          console.log("Processing 'increaseCollateral' instruction...");
-    
-          break;
-        case "liquidatePump":
-          console.log("Processing 'liquidatePump' instruction...");
-       
-          break;
-        case "liquidateRaydium":
-          console.log("Processing 'liquidateRaydium' instruction...");
-       
-          break;     
+        case "repay":case "liquidatePump":case "liquidateRaydium":
+          //Storage the action history into DB
+          await db.newActionHistory(data)
+          //Cancel listen , the posistion been closed.
+          console.log("Processing repay like actions . del the order");
+          break;   
         default:
           console.log(`Unhandled instruction: ${data}`);
       }

@@ -49,3 +49,35 @@ The whole liquidator including 2 standalong part :
 The monitor will take lots network resource and multithreading . Same as the exectutor . So it's better to use golang rebuild .
 
 Anyway. currently build with nodejs , to make sure it worn't takes too long time to release .
+
+
+## Base Logic (Write for myself . incase i forget how it works lol)
+
+#### Monitor :
+
+1. Loop fetch contract recently transactions (100x txns)
+
+2. Check last index hash form db . And get all the new txn `finalArr`
+
+3. Map the `finalArr` and fetch/decode txn by hash . And storage it into `action_history` db
+
+4. Decode , fliter all txn into different kinds by function name :
+    
+    Borrow / LoopBorrowPump / LoopBorrowRaydium / IncressInterest : 
+    - Generate Order Index : `Token-mint + Signer-address`
+    - Fetch onchain `UserBorrowData`
+    - Re-culcuate liquidtion time
+    - Storage it into `orders` db (overwrite) 
+
+    Repay / ClosePump / CloseRaydium
+    - Del record form `orders` db by order index
+
+5. Next Loop
+
+#### Executor :
+
+1. Get all timeout order from `orders` db fliter by liquition time .
+
+2. Generate the liquition transaction via SDK
+
+3. Sign and send transaction via local keypair
