@@ -11,6 +11,7 @@ const mainDB = process.env.DB_NAME
 /**
  * Public sheet
  */
+const sIndex = "indexer";
 const sOrder = "orders";
 const sOrderHistory = "order_history";
 
@@ -31,6 +32,31 @@ async function connect()
         }
     }
 }
+
+async function updateIndexer(data) {
+    const db = await connect()
+    const query = { id: data.id }; 
+    const ret = await db.db.collection(sIndex).replaceOne(query, data, { upsert: true });
+    await db.close();
+    return ret;
+}
+
+async function getIndexer(id) {
+    const db = await connect()
+    var ret = await db.collection(sIndex).find({
+       
+    }).project({_id:0}).toArray();
+    await db.close();
+    if(!ret || ret?.length ==0)
+    {
+        return {
+            id:0,
+            hash:""
+        }
+    }
+    return ret[0];
+}
+
 async function newOrder(data) {
     const db = await connect()
     const query = { id: data.id }; 
@@ -42,7 +68,7 @@ async function getOrderById(id) {
     const db = await connect()
     var ret = await db.collection(sOrder).find({
         id: id
-    }).project({}).toArray();
+    }).project({_id:0}).toArray();
     await db.close();
     return ret;
 }
@@ -75,5 +101,7 @@ module.exports = {
     getOrderById,
     getOrderByHash,
     newHistory,
-    getOrderHistoryById
+    getOrderHistoryById,
+    updateIndexer,
+    getIndexer
 }
