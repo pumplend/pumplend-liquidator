@@ -28,8 +28,8 @@ async function processInstruction(program, ix ,adds) {
     console.log("Unable to decode the instruction.");
     return;
   }
-  console.log("Decoded Instruction Name:", decodedIx.name);
-  console.log("Decoded Instruction Data:", decodedIx.data);
+  // console.log("Decoded Instruction Name:", decodedIx.name);
+  // console.log("Decoded Instruction Data:", decodedIx.data);
 
   return{
         name:decodedIx.name,

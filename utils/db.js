@@ -43,7 +43,7 @@ async function updateIndexer(data) {
 
 async function getIndexer(id) {
     const db = await connect()
-    var ret = await db.collection(sIndex).find({
+    var ret = await db.db.collection(sIndex).find({
        
     }).project({_id:0}).toArray();
     await db.close();
@@ -66,7 +66,7 @@ async function newOrder(data) {
 }
 async function getOrderById(id) {
     const db = await connect()
-    var ret = await db.collection(sOrder).find({
+    var ret = await db.db.collection(sOrder).find({
         id: id
     }).project({_id:0}).toArray();
     await db.close();
@@ -74,7 +74,7 @@ async function getOrderById(id) {
 }
 async function getOrderByHash(hash) {
     const db = await connect()
-    var ret = await db.collection(sOrder).find({
+    var ret = await db.db.collection(sOrder).find({
         hash: hash
     }).project({}).toArray();
     await db.close();
@@ -82,7 +82,7 @@ async function getOrderByHash(hash) {
 }
 async function getOrderByDeadline(deadline) {
     const db = await connect()
-    var ret = await db.collection(sOrder).find({
+    var ret = await db.db.collection(sOrder).find({
         liquidtionTime: { $lt: deadline }
     }).project({}).toArray();
     await db.close();
@@ -98,7 +98,7 @@ async function newHistory(data) {
 
 async function getOrderHistoryById(id) {
     const db = await connect()
-    var ret = await db.collection(sOrderHistory).find({
+    var ret = await db.db.collection(sOrderHistory).find({
         id: id
     }).project({}).toArray();
     await db.close();
@@ -114,7 +114,7 @@ async function newActionHistory(data) {
 
 async function getActionHistory(id) {
     const db = await connect()
-    var ret = await db.collection(sActionHistory).find({
+    var ret = await db.db.collection(sActionHistory).find({
         id: id
     }).project({}).toArray();
     await db.close();

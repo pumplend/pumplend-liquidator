@@ -9,7 +9,7 @@ const sdk = require("@pumplend/pumplend-sdk")
 async function generateLiquidtionTx(data)
 {
     try{
-        const p = new sdk.Pumplend("devnet") 
+        const p = new sdk.Pumplend(process.env.NETWORK) 
         const userBorrowData = await p.tryGetUserBorrowData(
             connection,data.token,data.user
         )

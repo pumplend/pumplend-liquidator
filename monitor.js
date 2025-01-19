@@ -5,7 +5,10 @@ const programId = new PublicKey(process.env.SOLANA_LISTEN_ADDRESS);
 const web3 = require("./utils/web3");
 const db = require("./utils/db")
 const monitoredAddress =programId;
+const sdk = require("@pumplend/pumplend-sdk")
 
+
+const lend = new sdk.Pumplend(process.env.NETWORK) 
 
 async function loop ()
 {
@@ -13,9 +16,14 @@ async function loop ()
     if(txs && txs?.length > 0)
         {
           console.log(txs[0].signature)
-          const finalArr = await hashCheck();
+          var finalArr = await hashCheck(txs);
           //Handel new order
-          for (let i = 0 ; i < finalArr ; i++)
+          // if(finalArr && finalArr?.length>0)
+          // {
+          //   finalArr = finalArr.reverse()
+          // }
+          
+          for (let i = finalArr.length ; i > 0 ; i--)
           {
             try{
               let tx = finalArr[i]
@@ -40,8 +48,14 @@ async function loop ()
 }
 
 async function handleNewTx(tx) {
-  const decode = await web3.getTransactionDetailsByHash(tx.signature);
-  return await actions(decode)
+  if(tx && tx?.signature )
+  {
+    const decode = await web3.getTransactionDetailsByHash(tx.signature);
+    for( let i = 0 ; i < decode.length;i++)
+    {
+      await actions(tx.signature,decode[i])
+    }
+  }
 }
 
 async function hashCheck(rawData) {
@@ -50,7 +64,7 @@ async function hashCheck(rawData) {
     for(let i = 0 ; i<=rawData.length ;i++)
     {
       //TODO , Add the out of index fetcher
-      if(rawData[i].signature == latestTxHash.hash)
+      if(rawData[i]?.signature == latestTxHash.hash)
       {
         return rawData.slice(0, i);
       }
@@ -59,28 +73,73 @@ async function hashCheck(rawData) {
     return rawData;
 }
 
-async function actions(data) {
-
-  
-  
-
+async function actions(hash,data) {
   //Handle transactions by actions types 
     switch (data.name) {
         case "borrow": case "borrowLoopPump": case "borrowLoopRaydium":case "increaseCollateral":
           //Storage the action history into DB
-          await db.newActionHistory(data)
+          const r =  newBorrowLikeAction(hash,data) 
+          // await db.newActionHistory(data)
           //Culcuate Liquidtion time using SDK
-          console.log("Processing borrow like actions . overwrite the order");
+          // console.log("Processing borrow like actions . overwrite the order");
           break;
         case "repay":case "liquidatePump":case "liquidateRaydium":
           //Storage the action history into DB
-          await db.newActionHistory(data)
+          // await db.newActionHistory(data)
           //Cancel listen , the posistion been closed.
-          console.log("Processing repay like actions . del the order");
-          break;   
+          // console.log("Processing repay like actions . del the order");
+          break;
+        case "stake" :
+          break;
+        case "withdraw" :
+          break;
         default:
-          console.log(`Unhandled instruction: ${data}`);
+          // console.log(`Unhandled instruction:`,data);
+          return 0;
       }
+}
+
+async function newBorrowLikeAction(hash,data) {
+  let signer,token,id,ret;
+
+  switch (data.name) {
+    case "borrow": 
+      signer = data.address[0];
+      token = data.address[7];
+      id = data.address[2]
+    break;
+    case "borrowLoopPump": 
+      signer = data.address[0];
+      token = data.address[7];
+      id = data.address[2]
+    break;
+    case "borrowLoopRaydium":
+      signer = data.address[0];
+      token = data.address[7];
+      id = data.address[2]
+    break;
+
+    case "increaseCollateral":
+      signer = data.address[0];
+      token = data.address[6];
+      id = data.address[3]
+    break;
+    default:
+    console.log(`Unhandled instruction: ${data}`);
+    return 0;
+  }
+
+  //Get data right now . and storage into the active orders . 
+  const borrowData  = lend.tryGetUserBorrowData(connection,token,signer);
+  const liquidtion = lend.pumplend_estimate_interest(borrowData);
+  ret = {
+    id:id.toBase58(),
+    hash:hash,
+    user:signer.toBase58(),
+    token:token.toBase58(),
+    deadline: liquidtion.liquiteTime,
+  }
+  console.log(ret)
 }
 
 function sleep(ms) {
