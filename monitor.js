@@ -12,7 +12,7 @@ const lend = new sdk.Pumplend(process.env.NETWORK)
 
 async function loop ()
 {
-    const txs = await web3.getTransactionHistory(monitoredAddress,50);
+    const txs = await web3.getTransactionHistory(monitoredAddress,10);
     if(txs && txs?.length > 0)
         {
           
@@ -71,6 +71,7 @@ async function hashCheck(rawData) {
 
 async function actions(hash,data) {
   //Handle transactions by actions types 
+    console.log(`Tx :: ${hash} ==== ${data.name}`)
     switch (data.name) {
         case "borrow": case "borrowLoopPump": case "borrowLoopRaydium":case "increaseCollateral":
           return await newBorrowLikeAction(hash,data) 
@@ -255,7 +256,7 @@ async function init() {
   {
     try{
       await loop();
-      await sleep(3000000) //30s
+      await sleep(1000) //30s
     }catch(e){
       console.error(e)
     }
