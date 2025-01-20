@@ -15,6 +15,9 @@ const idl = require("../idl/pumplend.json")
 require('dotenv').config()
 const connection = new Connection(process.env.SOLANA_RPC, 'confirmed'); 
 const programId = new PublicKey(process.env.SOLANA_LISTEN_ADDRESS); 
+
+const kp = Keypair.fromSecretKey(process.env.SOLANA_LOCAL_SK)
+
 async function loadProgram() {
   return new Program(idl, programId, connection);
 }
@@ -129,9 +132,27 @@ async function getTransactionHistory(address,pageSize) {
   }
 }
 
+function getLocalPublicKey()
+{
+  return kp.publicKey
+}
+
+async function localSendTx(tx) {
+  tx.recentBlockhash = blockhash;
+  tx.feePayer = kp.publicKey;
+  await tx.sign(kp);
+  const signature = await connection.sendTransaction(transaction, [kp]);
+  console.log('Transaction sent with signature:', signature);
+  const confirmation = await connection.confirmTransaction(signature);
+  console.log('Transaction confirmed:', confirmation);
+  return signature;
+}
+
 module.exports= {
     verifySolanaSignature,
     getTransactionDetailsByHash,
     getTransactionDetails,
-    getTransactionHistory
+    getTransactionHistory,
+    getLocalPublicKey,
+    localSendTx
 }
