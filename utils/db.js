@@ -85,7 +85,7 @@ async function getOrderByHash(hash) {
     const db = await connect()
     var ret = await db.db.collection(sOrder).find({
         hash: hash
-    }).project({}).toArray();
+    }).project({_id:0}).toArray();
     await db.close();
     return ret;
 }
@@ -93,7 +93,7 @@ async function getOrderByDeadline(deadline) {
     const db = await connect()
     var ret = await db.db.collection(sOrder).find({
         liquidtionTime: { $lt: deadline }
-    }).project({}).toArray();
+    }).project({_id:0}).toArray();
     await db.close();
     return ret;
 }
@@ -116,7 +116,14 @@ async function getActionHistoryById(id) {
     const db = await connect()
     var ret = await db.db.collection(sActionHistory).find({
         id: id
-    }).project({}).toArray();
+    }).project({_id:0}).toArray();
+    await db.close();
+    return ret;
+}
+
+async function getActionHistoryByRules(rules) {
+    const db = await connect()
+    var ret = await db.db.collection(sActionHistory).find(rules).project({_id:0}).toArray();
     await db.close();
     return ret;
 }
@@ -124,7 +131,7 @@ async function getActionHistoryById(id) {
 async function getActionHistory() {
     const db = await connect()
     var ret = await db.db.collection(sActionHistory).find({
-    }).project({}).toArray();
+    }).project({_id:0}).toArray();
     await db.close();
     return ret;
 }
@@ -140,5 +147,6 @@ module.exports = {
     getActionHistory,
     getActionHistoryById,
     getOrderByDeadline,
+    getActionHistoryByRules,
     getOrders
 }

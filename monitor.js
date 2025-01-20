@@ -12,7 +12,7 @@ const lend = new sdk.Pumplend(process.env.NETWORK)
 
 async function loop ()
 {
-    const txs = await web3.getTransactionHistory(monitoredAddress,500);
+    const txs = await web3.getTransactionHistory(monitoredAddress,50);
     if(txs && txs?.length > 0)
         {
           
@@ -263,4 +263,6 @@ async function init() {
 }
 
 
-loop()
+// loop()
+
+init()
