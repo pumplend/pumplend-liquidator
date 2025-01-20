@@ -11,7 +11,7 @@ const pk = web3.getLocalPublicKey();
 async function generateLiquidtionTx(data)
 {
     try{
-        console.log(data)
+        // console.log(data)
         const p = new sdk.Pumplend(process.env.NETWORK) 
         const userBorrowData = await p.tryGetUserBorrowData(
             connection,
@@ -39,7 +39,7 @@ async function loop ()
     {
         //Sign and send exection transaction
         const tx = await generateLiquidtionTx(pendingOrders[i]);
-        console.log(tx)
+        // console.log(tx)
         if(tx)
         {
             //Success . go ahead
@@ -47,7 +47,7 @@ async function loop ()
                 const ret = await web3.localSendTx(
                     tx
                 )
-                console.log("ret :: ",ret)
+                console.log("new liquidtion :: ",ret)
             }catch(e)
             {
                 console.error(e)
@@ -64,7 +64,7 @@ async function init() {
     {
       try{
         await loop();
-        await sleep(3000000) //30s
+        await sleep(1000) //30s
       }catch(e){
         console.error(e)
       }
@@ -72,4 +72,5 @@ async function init() {
   }
   
   
-  loop()
+//   loop()
+init()

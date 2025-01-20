@@ -134,7 +134,7 @@ async function newBorrowLikeAction(hash,data) {
 
     //Get data right now . and storage into the active orders . 
     const borrowData  = await lend.tryGetUserBorrowData(connection,token,signer);
-    const liquidtion = lend.pumplend_estimate_interest(borrowData);
+    const liquidtion = lend.pumplend_estimate_interest(borrowData,10);
     // console.log(borrowData)
     ret = {
       hash:hash,

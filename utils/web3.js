@@ -146,9 +146,9 @@ async function localSendTx(tx) {
   tx.feePayer = kp.publicKey;
   await tx.sign(kp);
   const signature = await connection.sendTransaction(tx, [kp]);
-  console.log('Transaction sent with signature:', signature);
+  // console.log('Transaction sent with signature:', signature);
   const confirmation = await connection.confirmTransaction(signature);
-  console.log('Transaction confirmed:', confirmation);
+  // console.log('Transaction confirmed:', confirmation);
   return signature;
 }
 
