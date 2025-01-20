@@ -1,7 +1,7 @@
 
 const { Connection, PublicKey } = require('@solana/web3.js');
 require('dotenv').config()
-const connection = new Connection(process.env.SOLANA_RPC, 'confirmed'); 
+const connection = new Connection(process.env.SOLANA_RPC, 'finalized'); 
 const web3 = require("./utils/web3");
 const db = require("./utils/db")
 const sdk = require("@pumplend/pumplend-sdk")

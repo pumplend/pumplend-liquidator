@@ -57,13 +57,21 @@ async function getIndexer(id) {
     return ret[0];
 }
 
-async function newOrder(data) {
+async function updateOrder(data) {
     const db = await connect()
     const query = { id: data.id }; 
     const ret = await db.db.collection(sOrder).replaceOne(query, data, { upsert: true });
     await db.close();
     return ret;
 }
+
+async function closeOrder(id) {
+    const db = await connect()
+    const ret = await db.db.collection(sOrder).deleteMany({ id: id });
+    await db.close();
+    return ret;
+}
+
 async function getOrderById(id) {
     const db = await connect()
     var ret = await db.db.collection(sOrder).find({
@@ -89,21 +97,6 @@ async function getOrderByDeadline(deadline) {
     return ret;
 }
 
-async function newHistory(data) {
-    const db = await connect()
-    var ret = await db.db.collection(sOrderHistory).insertOne(data);
-    await db.close();
-    return ret;
-}
-
-async function getOrderHistoryById(id) {
-    const db = await connect()
-    var ret = await db.db.collection(sOrderHistory).find({
-        id: id
-    }).project({}).toArray();
-    await db.close();
-    return ret;
-}
 
 async function newActionHistory(data) {
     const db = await connect()
@@ -112,7 +105,7 @@ async function newActionHistory(data) {
     return ret;
 }
 
-async function getActionHistory(id) {
+async function getActionHistoryById(id) {
     const db = await connect()
     var ret = await db.db.collection(sActionHistory).find({
         id: id
@@ -121,15 +114,23 @@ async function getActionHistory(id) {
     return ret;
 }
 
+async function getActionHistory() {
+    const db = await connect()
+    var ret = await db.db.collection(sActionHistory).find({
+    }).project({}).toArray();
+    await db.close();
+    return ret;
+}
+
 module.exports = {
-    newOrder,
+    updateOrder,
+    closeOrder,
     getOrderById,
     getOrderByHash,
-    newHistory,
-    getOrderHistoryById,
     updateIndexer,
     getIndexer,
     newActionHistory,
     getActionHistory,
+    getActionHistoryById,
     getOrderByDeadline
 }

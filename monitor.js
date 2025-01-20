@@ -1,6 +1,6 @@
 const { Connection, PublicKey } = require('@solana/web3.js');
 require('dotenv').config()
-const connection = new Connection(process.env.SOLANA_RPC, 'confirmed'); 
+const connection = new Connection(process.env.SOLANA_RPC, 'finalized'); 
 const programId = new PublicKey(process.env.SOLANA_LISTEN_ADDRESS); 
 const web3 = require("./utils/web3");
 const db = require("./utils/db")
@@ -12,10 +12,10 @@ const lend = new sdk.Pumplend(process.env.NETWORK)
 
 async function loop ()
 {
-    const txs = await web3.getTransactionHistory(monitoredAddress,100);
+    const txs = await web3.getTransactionHistory(monitoredAddress,20);
     if(txs && txs?.length > 0)
         {
-          console.log(txs[0].signature)
+          // console.log(txs[0].signature)
           var finalArr = await hashCheck(txs);
           //Handel new order
           // if(finalArr && finalArr?.length>0)
@@ -23,20 +23,22 @@ async function loop ()
           //   finalArr = finalArr.reverse()
           // }
           
-          for (let i = finalArr.length ; i > 0 ; i--)
+          
+          for (let i = finalArr.length-1 ; i > -1 ; i--)
           {
             try{
               let tx = finalArr[i]
+             
               await handleNewTx(tx)
 
               //Update indexer
 
-              // await db.updateIndexer(
-              //   {
-              //     id:0,
-              //     hash:tx.signature
-              //   }
-              // )
+              await db.updateIndexer(
+                {
+                  id:0,
+                  hash:tx.signature
+                }
+              )
             }catch(e)
             {
               console.error(e)
@@ -78,8 +80,9 @@ async function actions(hash,data) {
     switch (data.name) {
         case "borrow": case "borrowLoopPump": case "borrowLoopRaydium":case "increaseCollateral":
           //Storage the action history into DB
-          const r =  newBorrowLikeAction(hash,data) 
-          // await db.newActionHistory(data)
+
+          return await newBorrowLikeAction(hash,data) 
+
           //Culcuate Liquidtion time using SDK
           // console.log("Processing borrow like actions . overwrite the order");
           break;
@@ -88,10 +91,11 @@ async function actions(hash,data) {
           // await db.newActionHistory(data)
           //Cancel listen , the posistion been closed.
           // console.log("Processing repay like actions . del the order");
+
+          return await newRepayLikeAction(hash,data)
           break;
-        case "stake" :
-          break;
-        case "withdraw" :
+        case "stake" : case "withdraw" :
+          return await otherActions(hash,data)
           break;
         default:
           // console.log(`Unhandled instruction:`,data);
@@ -101,12 +105,13 @@ async function actions(hash,data) {
 
 async function newBorrowLikeAction(hash,data) {
   let signer,token,id,ret;
-
   switch (data.name) {
     case "borrow": 
       signer = data.address[0];
       token = data.address[7];
-      id = data.address[2]
+      id = data.address[2];
+
+
     break;
     case "borrowLoopPump": 
       signer = data.address[0];
@@ -129,18 +134,146 @@ async function newBorrowLikeAction(hash,data) {
     return 0;
   }
 
-  //Get data right now . and storage into the active orders . 
-  const borrowData  = lend.tryGetUserBorrowData(connection,token,signer);
-  const liquidtion = lend.pumplend_estimate_interest(borrowData);
-  ret = {
-    id:id.toBase58(),
-    hash:hash,
-    user:signer.toBase58(),
-    token:token.toBase58(),
-    deadline: liquidtion.liquiteTime,
+  try{
+    //Storage active history now 
+    const active = {
+      hash:hash,
+      id:id.toBase58(),
+      type:data.name,
+      user:signer.toBase58(),
+      token:token.toBase58(),
+      amount:data.inputData.collateralAmount.toString(),
+      blockTime : data.blockTime,
+    }
+    await db.newActionHistory(active)
+
+    //Get data right now . and storage into the active orders . 
+    const borrowData  = await lend.tryGetUserBorrowData(connection,token,signer);
+    const liquidtion = lend.pumplend_estimate_interest(borrowData);
+    ret = {
+      hash:hash,
+      id:id.toBase58(),
+      user:signer.toBase58(),
+      token:token.toBase58(),
+      referrer:borrowData.referrer.toBase58(),
+      blockTime : data.blockTime,
+      deadline: liquidtion.liquiteTime,
+    }
+    // console.log(ret)
+    await db.updateOrder(ret)
+
+    return true;
+  }catch(e)
+  {
+    console.log(e)
+    //May be position already close . emit account not found , ignore it /
   }
-  console.log(ret)
+
 }
+async function newRepayLikeAction(hash,data) {
+  let liquidator,signer,referrer,token,id,ret;
+  switch (data.name) {
+    case "repay": 
+      liquidator = data.address[0]
+      signer = data.address[0];
+      referrer = data.address[1]
+      token = data.address[8];
+      id = data.address[3];
+    break;
+    case "liquidatePump": 
+      liquidator = data.address[0]
+      signer = data.address[1];
+      referrer = data.address[24]
+      token = data.address[8];
+      id = data.address[3]
+    break;
+    case "liquidateRaydium":
+      liquidator = data.address[0]
+      signer = data.address[1];
+      referrer = data.address[24]
+      token = data.address[9];
+      id = data.address[3]
+    break;
+    default:
+    console.log(`Unhandled instruction: ${data}`);
+    return 0;
+  }
+
+  try{
+    //Storage active history now 
+    const active = {
+      hash:hash,
+      id:id.toBase58(),
+      type:data.name,
+      liquidator:liquidator.toBase58(),
+      user:signer.toBase58(),
+      token:token.toBase58(),
+      referrer:referrer.toBase58(),
+      blockTime : data.blockTime,
+    }
+    // console.log(active)
+    await db.newActionHistory(active)
+
+    //Get data right now . now try del it . 
+    const borrowData  = await lend.tryGetUserBorrowData(connection,token,signer);
+    const liquidtion = lend.pumplend_estimate_interest(borrowData);
+    ret = {
+      hash:hash,
+      id:id.toBase58(),
+      liquidator:liquidator.toBase58(),
+      user:signer.toBase58(),
+      token:token.toBase58(),
+      referrer:referrer.toBase58(),
+      blockTime : data.blockTime,
+      deadline: liquidtion.liquiteTime,
+    }
+    // console.log(ret)
+    if(ret.blockTime == 0 )
+    {
+       await db.closeOrder(ret)
+    }
+   
+    return true;
+  }catch(e)
+  {
+    console.log(e)
+    //May be position already close . emit account not found , ignore it /
+  }
+}
+
+
+async function otherActions(hash,data) {
+  let active;
+  switch (data.name) {
+    case "stake": 
+      active = {
+        hash:hash,
+        type:data.name,
+        user:data.address[0].toBase58(),
+        referrer : data.address[1].toBase58(),
+        amount:data.inputData.amount.toString(),
+        blockTime : data.blockTime,
+      }
+    break;
+    case "withdraw": 
+    active = {
+      hash:hash,
+      type:data.name,
+      user:data.address[0].toBase58(),
+      referrer : data.address[1].toBase58(),
+      shares:data.inputData.shares.toString(),
+      blockTime : data.blockTime,
+    }
+    break;
+    default:
+    console.log(`Unhandled instruction: ${data}`);
+    return 0;
+  }
+  // console.log(active)
+  await db.newActionHistory(active)
+
+}
+
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

@@ -19,7 +19,13 @@ async function loadProgram() {
   return new Program(idl, programId, connection);
 }
 
-async function processInstruction(program, ix ,adds) {
+async function processInstruction(program, ix ,adds ,opts) {
+  const add = [];
+  ix.accounts.forEach(e => {
+    add.push(
+      adds[e]
+    )
+  });
   if (adds[ix.programIdIndex].toBase58() != program.programId.toBase58()) {
     return;
   }
@@ -34,7 +40,8 @@ async function processInstruction(program, ix ,adds) {
   return{
         name:decodedIx.name,
         inputData : decodedIx.data,
-        address:adds
+        blockTime : opts.blockTime,
+        address:add
     }
 }
 
@@ -44,10 +51,11 @@ async function parseTransactionByHash(txHash, program) {
       console.error("Transaction not found.");
       return;
     }
+    // console.log(transaction)
     const instructions = transaction.transaction.message.instructions;
     let ret = [];
     for (const ix of instructions) {
-      const tmp = await processInstruction(program, ix,transaction.transaction.message.accountKeys);
+      const tmp = await processInstruction(program, ix,transaction.transaction.message.accountKeys,{blockTime:transaction.blockTime});
       if(tmp)
       {
           ret.push(
