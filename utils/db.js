@@ -67,6 +67,7 @@ async function updateOrder(data) {
 
 async function closeOrder(id) {
     const db = await connect()
+    console.log("del ::",id)
     const ret = await db.db.collection(sOrder).deleteMany({ id: id });
     await db.close();
     return ret;
@@ -96,7 +97,13 @@ async function getOrderByDeadline(deadline) {
     await db.close();
     return ret;
 }
-
+async function getOrders() {
+    const db = await connect()
+    var ret = await db.db.collection(sOrder).find({
+    }).project({_id:0}).toArray();
+    await db.close();
+    return ret;
+}
 
 async function newActionHistory(data) {
     const db = await connect()
@@ -132,5 +139,6 @@ module.exports = {
     newActionHistory,
     getActionHistory,
     getActionHistoryById,
-    getOrderByDeadline
+    getOrderByDeadline,
+    getOrders
 }
