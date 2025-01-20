@@ -11,12 +11,15 @@
 const { Connection, PublicKey ,Keypair} = require("@solana/web3.js");
 const { Program, AnchorProvider } = require("@project-serum/anchor");
 const nacl = require('tweetnacl');
-const idl = require("../idl/pumplend.json")
+const idl = require("../idl/pumplend.json");
+const { bs58 } = require("@project-serum/anchor/dist/cjs/utils/bytes");
 require('dotenv').config()
 const connection = new Connection(process.env.SOLANA_RPC, 'confirmed'); 
 const programId = new PublicKey(process.env.SOLANA_LISTEN_ADDRESS); 
 
-const kp = Keypair.fromSecretKey(process.env.SOLANA_LOCAL_SK)
+const kp = Keypair.fromSecretKey(
+  bs58.decode(process.env.SOLANA_LOCAL_SK)
+)
 
 async function loadProgram() {
   return new Program(idl, programId, connection);
@@ -138,10 +141,11 @@ function getLocalPublicKey()
 }
 
 async function localSendTx(tx) {
+  const { blockhash } = await connection.getRecentBlockhash();
   tx.recentBlockhash = blockhash;
   tx.feePayer = kp.publicKey;
   await tx.sign(kp);
-  const signature = await connection.sendTransaction(transaction, [kp]);
+  const signature = await connection.sendTransaction(tx, [kp]);
   console.log('Transaction sent with signature:', signature);
   const confirmation = await connection.confirmTransaction(signature);
   console.log('Transaction confirmed:', confirmation);

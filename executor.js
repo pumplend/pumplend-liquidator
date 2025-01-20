@@ -11,16 +11,20 @@ const pk = web3.getLocalPublicKey();
 async function generateLiquidtionTx(data)
 {
     try{
+        console.log(data)
         const p = new sdk.Pumplend(process.env.NETWORK) 
         const userBorrowData = await p.tryGetUserBorrowData(
-            connection,data.token,data.user
+            connection,
+            new PublicKey(data.token),
+            new PublicKey(data.user)
         )
+        
         return await p.close_pump(
             new PublicKey(data.token),new PublicKey(data.user),userBorrowData.referrer,pk
         )
     }catch(e)
     {
-        
+        console.error(e)
     }
 
 }
@@ -31,17 +35,24 @@ async function loop ()
     const timenow = Math.floor(Date.now()/1000) //Get timestamp in sec
     const pendingOrders = await db.getOrderByDeadline(timenow)
 
-    for(let i = 0 ; i< pendingOrders ; i++)
+    for(let i = 0 ; i< pendingOrders.length ; i++)
     {
         //Sign and send exection transaction
         const tx = await generateLiquidtionTx(pendingOrders[i]);
+        console.log(tx)
         if(tx)
         {
             //Success . go ahead
-            const ret = await web3.localSendTx(
-                tx
-            )
-            console.log("ret :: ",ret)
+            try{
+                const ret = await web3.localSendTx(
+                    tx
+                )
+                console.log("ret :: ",ret)
+            }catch(e)
+            {
+                console.error(e)
+            }
+
         }else{
             //Failed . why ? check . Email ? Telegram Bot ? or SMS . info me 
         }
