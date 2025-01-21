@@ -1,6 +1,6 @@
 const { Connection, PublicKey } = require('@solana/web3.js');
 require('dotenv').config()
-const connection = new Connection(process.env.SOLANA_RPC, 'finalized'); 
+const connection = new Connection(process.env.SOLANA_RPC, 'confirmed'); 
 const programId = new PublicKey(process.env.SOLANA_LISTEN_ADDRESS); 
 const web3 = require("./utils/web3");
 const db = require("./utils/db")

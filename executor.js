@@ -1,7 +1,7 @@
 
 const { Connection, PublicKey } = require('@solana/web3.js');
 require('dotenv').config()
-const connection = new Connection(process.env.SOLANA_RPC, 'finalized'); 
+const connection = new Connection(process.env.SOLANA_RPC, 'confirmed'); 
 const web3 = require("./utils/web3");
 const db = require("./utils/db")
 const sdk = require("@pumplend/pumplend-sdk")
@@ -34,19 +34,18 @@ async function loop ()
 {
     const timenow = Math.floor(Date.now()/1000) //Get timestamp in sec
     const pendingOrders = await db.getOrderByDeadline(timenow)
-
+    
     for(let i = 0 ; i< pendingOrders.length ; i++)
     {
         //Sign and send exection transaction
         const tx = await generateLiquidtionTx(pendingOrders[i]);
+        // console.log(pendingOrders[i])
         // console.log(tx)
         if(tx)
         {
             //Success . go ahead
             try{
-                const ret = await web3.localSendTx(
-                    tx
-                )
+                const ret = await web3.localSendTx(tx)
                 console.log("new liquidtion :: ",ret)
             }catch(e)
             {
@@ -58,13 +57,16 @@ async function loop ()
         }
     }
 }
-
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  
 async function init() {
     while(true)
     {
       try{
         await loop();
-        await sleep(1000) //30s
+        await sleep(30000) //30s
       }catch(e){
         console.error(e)
       }
