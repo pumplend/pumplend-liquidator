@@ -8,6 +8,7 @@ const sdk = require("@pumplend/pumplend-sdk")
 
 const pk = web3.getLocalPublicKey();
 
+const lend = new sdk.Pumplend(process.env.NETWORK) 
 async function generateLiquidtionTx(data)
 {
     try{
@@ -39,7 +40,23 @@ async function loop ()
     {
         //Sign and send exection transaction
         const tx = await generateLiquidtionTx(pendingOrders[i]);
+        // const userBorrowData = await lend.tryGetUserBorrowData(
+        //     connection,
+        //     new PublicKey(pendingOrders[i].token),
+        //     new PublicKey(pendingOrders[i].user),
+           
+        // )
         // console.log(pendingOrders[i])
+        // console.log(
+        //     "User borrow data : : ",
+        //     userBorrowData,
+        //     "\n Estimate interest ::",lend.pumplend_estimate_interest(
+        //         userBorrowData,
+        //         10
+        //     ),
+        //     "\n Max sol ::",lend.pumplend_culcuate_max_borrow_rate({},userBorrowData.collateralAmount,0.8)
+        // )
+
         // console.log(tx)
         if(tx)
         {
