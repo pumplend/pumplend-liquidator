@@ -5,6 +5,7 @@ const connection = new Connection(process.env.SOLANA_RPC, 'confirmed');
 const web3 = require("./utils/web3");
 const db = require("./utils/db")
 const sdk = require("@pumplend/pumplend-sdk")
+const ray = require("@pumplend/raydium-js-sdk")
 
 const pk = web3.getLocalPublicKey();
 
@@ -19,10 +20,24 @@ async function generateLiquidtionTx(data)
             new PublicKey(data.token),
             new PublicKey(data.user)
         )
-        
-        return await p.close_pump(
-            new PublicKey(data.token),new PublicKey(data.user),userBorrowData.referrer,pk
-        )
+        const curve = await p.tryGetPumpTokenCurveData(connection,new PublicKey(data.token))
+        if(curve && curve.complete == BigInt(1))
+        {
+            const pools = await ray.getPoolsForToken(new PublicKey(data.token))
+            if(pools && pools.length>0)
+            {
+                const pool = pools[0];
+                console.log("Try close it in raydium ::",pool)
+                return await p.close_raydium(
+                    connection,new PublicKey(data.token),pool,new PublicKey(data.user),userBorrowData.referrer,pk
+                )
+            }
+        }else{
+            return await p.close_pump(
+                new PublicKey(data.token),new PublicKey(data.user),userBorrowData.referrer,pk
+            )
+        }
+
     }catch(e)
     {
         console.error(e)
