@@ -14,7 +14,7 @@ async function generateLiquidtionTx(data)
 {
     try{
         // console.log(data)
-        const p = new sdk.Pumplend(process.env.NETWORK) 
+        const p = new sdk.Pumplend(process.env.NETWORK,new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk"),null,new PublicKey("6QJnyDfQHu1mfCpMiyamBhshbjsAQm9T8baSpHPyrtNe")) 
         const userBorrowData = await p.tryGetUserBorrowData(
             connection,
             new PublicKey(data.token),
