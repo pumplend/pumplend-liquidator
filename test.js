@@ -13,7 +13,7 @@ async function test() {
     //         }
     //     )
     // )
-    await db.closeOrder("B3xLuaoerKC5pPJg5n2QGocV6SUNTYX2aLZL3NztXbXq")
+    await db.closeOrder("2g8XG2pQSn6q9LLDEckBqbnyxZC1rCsxkD1tX62VcbCK")
 }
 
 test()

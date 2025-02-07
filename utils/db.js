@@ -92,7 +92,7 @@ async function getOrderByHash(hash) {
 async function getOrderByDeadline(deadline) {
     const db = await connect()
     var ret = await db.db.collection(sOrder).find({
-        deadline: { $lt: deadline }
+        deadline: { $gt:0 , $lt: deadline }
     }).project({_id:0}).toArray();
     await db.close();
     return ret;

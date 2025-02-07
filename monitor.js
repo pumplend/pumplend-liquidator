@@ -105,7 +105,7 @@ async function newBorrowLikeAction(hash,data) {
     break;
     case "borrowLoopRaydium":
       signer = data.address[0];
-      token = data.address[7];
+      token = data.address[5];
       id = data.address[2]
     break;
 
