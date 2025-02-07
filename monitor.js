@@ -172,15 +172,15 @@ async function newRepayLikeAction(hash,data) {
     case "liquidatePump": 
       liquidator = data.address[0]
       signer = data.address[1];
-      referrer = data.address[24]
-      token = data.address[8];
+      referrer = data.address[23]
+      token = data.address[7];
       id = data.address[3]
     break;
     case "liquidateRaydium":
       liquidator = data.address[0]
       signer = data.address[1];
-      referrer = data.address[24]
-      token = data.address[9];
+      referrer = data.address[30]
+      token = data.address[8];
       id = data.address[3]
     break;
     default:
