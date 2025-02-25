@@ -14,7 +14,12 @@ async function generateLiquidtionTx(data)
 {
     try{
         console.log(data)
-        const p = new sdk.Pumplend(process.env.NETWORK,new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk"),null,new PublicKey("FVRXRzHXtG1UDdrVfLPoSTKD44cwx99XKoWAqcQqeNb")) 
+        const p = new sdk.Pumplend(
+            process.env.NETWORK,
+            // new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk"),
+            // null,
+            // new PublicKey("FVRXRzHXtG1UDdrVfLPoSTKD44cwx99XKoWAqcQqeNb")
+        ) 
         const userBorrowData = await p.tryGetUserBorrowData(
             connection,
             new PublicKey(data.token),
@@ -23,7 +28,7 @@ async function generateLiquidtionTx(data)
         const curve = await p.tryGetPumpTokenCurveData(connection,new PublicKey(data.token))
         if(curve && curve.complete == BigInt(1))
         {
-            const pools = await ray.getPoolsForToken(new PublicKey(data.token))
+            const pools = await ray.getPoolsForToken(new PublicKey(data.token),PublicKey.default,"mainnet")
             if(pools && pools.length>0)
             {
                 const pool = pools[0];
@@ -50,7 +55,7 @@ async function loop ()
 {
     const timenow = Math.floor(Date.now()/1000) //Get timestamp in sec
     const pendingOrders = await db.getOrderByDeadline(timenow)
-    
+    console.log(pendingOrders)
     for(let i = 0 ; i< pendingOrders.length ; i++)
     {
         //Sign and send exection transaction
